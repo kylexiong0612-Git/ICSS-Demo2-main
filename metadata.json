@@ -1,0 +1,8 @@
+{
+  "name": "一体化渠道智能服务平台",
+  "description": "集智能交互、人机协同、分级流转、数据融合于一体的全渠道人寿保险客户服务中台。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

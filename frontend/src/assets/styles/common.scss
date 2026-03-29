@@ -1,0 +1,72 @@
+// PC 端页面布局类，对应公司开发规范 common.scss
+
+.main-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-breadcrumb {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  height: 40px;
+  border-bottom: 1px solid var(--blod-border-color);
+  background-color: #fff;
+  font-size: 14px;
+  color: var(--title-color);
+}
+
+.main-area {
+  flex: 1;
+  overflow: hidden;
+  padding: 16px;
+  background-color: var(--bg-color);
+}
+
+.main-content {
+  height: 100%;
+  overflow-y: auto;
+  background-color: #fff;
+}
+
+.main-pd32 {
+  padding: 32px;
+}
+
+.main-grey-border {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+// 公共滚动条样式
+.custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+
+    &:hover {
+      background: var(--desc-color);
+    }
+  }
+}
+
+.no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -rf node_modules package-lock.json)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(openspec instructions:*)",
+      "Bash(mkdir -p /Users/kylexiong/Documents/Project/ICSS-Demo1-main/openspec/changes/improve-agent-fault-report/specs/fault-report-dialog)",
+      "Bash(mkdir -p /Users/kylexiong/Documents/Project/ICSS-Demo1-main/openspec/changes/improve-agent-fault-report/specs/agent-created-task)",
+      "Bash(openspec status:*)",
+      "Bash(find /Users/kylexiong/Documents/Project/ICSS-Demo2-main -not -path */node_modules* -not -name .DS_Store -maxdepth 3)",
+      "Bash(mkdir -p frontend backend)",
+      "Bash(mv src:*)",
+      "Bash(mv index.html frontend/index.html)",
+      "Bash(mv package.json frontend/package.json)",
+      "Bash(mv package-lock.json frontend/package-lock.json)",
+      "Bash(brew install:*)",
+      "Bash(brew services:*)",
+      "Bash(/opt/homebrew/opt/mysql/bin/mysql -u root --socket=/tmp/mysql.sock 2)",
+      "Bash(1:*)",
+      "Bash(sudo /opt/homebrew/opt/mysql/bin/mysql -u root --socket=/tmp/mysql.sock -e \"ALTER USER ''root''@''localhost'' IDENTIFIED BY ''root20260329''; FLUSH PRIVILEGES;\")",
+      "Bash(PATH=\"/opt/homebrew/opt/mysql/bin:$PATH\" mysql -u root -e \"ALTER USER ''root''@''localhost'' IDENTIFIED BY ''root20260329''; FLUSH PRIVILEGES;\")",
+      "Bash(PATH=\"/opt/homebrew/opt/mysql-client/bin:/opt/homebrew/opt/mysql/bin:$PATH\" mysql -u root -h 127.0.0.1 -P 3306 -e \"SELECT 1;\")",
+      "Bash(mvn spring-boot:run)",
+      "Bash(curl -s http://localhost:8080/api/tasks?level=1)",
+      "Bash(python3 -m json.tool)"
+    ]
+  }
+}

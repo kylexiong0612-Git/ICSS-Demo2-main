@@ -1,0 +1,16 @@
+// 覆盖 Vant 组件的 CSS 变量，与项目主题对齐
+:root:root {
+  --van-primary-color: var(--primary-color);
+  --van-button-radius: 0;
+  --van-nav-bar-background: var(--primary-color);
+  --van-nav-bar-title-text-color: #fff;
+  --van-nav-bar-icon-color: #fff;
+  --van-nav-bar-arrow-size: 18px;
+  --van-nav-bar-height: 48px;
+  --van-cell-background: #fff;
+  --van-cell-border-color: var(--border-color);
+  --van-field-label-color: #666;
+  --van-field-value-text-color: #333;
+  --van-tabs-bottom-bar-color: var(--primary-color);
+  --van-tab-active-text-color: var(--primary-color);
+}

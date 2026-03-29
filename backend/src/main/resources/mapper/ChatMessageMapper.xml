@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icss.mapper.ChatMessageMapper">
+
+    <resultMap id="msgResultMap" type="com.icss.model.ChatMessage">
+        <id     property="id"          column="id"/>
+        <result property="customerId"  column="customer_id"/>
+        <result property="taskId"      column="task_id"/>
+        <result property="role"        column="role"/>
+        <result property="content"     column="content"/>
+        <result property="messageType" column="message_type"/>
+        <result property="metadata"    column="metadata"
+                typeHandler="com.icss.handler.JsonMapTypeHandler"/>
+        <result property="createdAt"   column="created_at"/>
+    </resultMap>
+
+    <select id="selectByCustomerId" resultMap="msgResultMap">
+        SELECT * FROM chat_message WHERE customer_id = #{customerId} ORDER BY created_at ASC
+    </select>
+
+    <insert id="insert">
+        INSERT INTO chat_message (id, customer_id, task_id, role, content, message_type, metadata, created_at)
+        VALUES (#{id}, #{customerId}, #{taskId}, #{role}, #{content}, #{messageType},
+                #{metadata, typeHandler=com.icss.handler.JsonMapTypeHandler},
+                #{createdAt})
+    </insert>
+
+</mapper>

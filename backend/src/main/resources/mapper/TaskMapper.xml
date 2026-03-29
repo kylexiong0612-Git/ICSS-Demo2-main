@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icss.mapper.TaskMapper">
+
+    <resultMap id="taskResultMap" type="com.icss.model.ServiceTask">
+        <id     property="id"            column="id"/>
+        <result property="customerId"    column="customer_id"/>
+        <result property="agentId"       column="agent_id"/>
+        <result property="requestSource" column="request_source"/>
+        <result property="status"        column="status"/>
+        <result property="priority"      column="priority"/>
+        <result property="category"      column="category"/>
+        <result property="summary"       column="summary"/>
+        <result property="aiSuggestion"  column="ai_suggestion"/>
+        <result property="assignedTo"    column="assigned_to"/>
+        <result property="unreadCount"   column="unread_count"/>
+        <result property="level"         column="level"/>
+        <result property="tags"          column="tags"
+                typeHandler="com.icss.handler.JsonListTypeHandler"/>
+        <result property="createdAt"     column="created_at"/>
+        <result property="updatedAt"     column="updated_at"/>
+    </resultMap>
+
+    <select id="selectByLevelAndStatus" resultMap="taskResultMap">
+        SELECT * FROM service_task
+        WHERE level = #{level}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectById" resultMap="taskResultMap">
+        SELECT * FROM service_task WHERE id = #{id}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO service_task (id, customer_id, agent_id, request_source, status, priority,
+                                  category, summary, ai_suggestion, assigned_to, unread_count,
+                                  level, tags, created_at, updated_at)
+        VALUES (#{id}, #{customerId}, #{agentId}, #{requestSource}, #{status}, #{priority},
+                #{category}, #{summary}, #{aiSuggestion}, #{assignedTo}, #{unreadCount},
+                #{level},
+                #{tags, typeHandler=com.icss.handler.JsonListTypeHandler},
+                #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="update">
+        UPDATE service_task
+        SET summary      = #{summary},
+            ai_suggestion= #{aiSuggestion},
+            status       = #{status},
+            priority     = #{priority},
+            category     = #{category},
+            assigned_to  = #{assignedTo},
+            unread_count = #{unreadCount},
+            tags         = #{tags, typeHandler=com.icss.handler.JsonListTypeHandler},
+            updated_at   = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE service_task
+        SET status     = #{status},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="grab">
+        UPDATE service_task
+        SET status      = 'Processing',
+            assigned_to = #{assignedTo},
+            updated_at  = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="escalate">
+        UPDATE service_task
+        SET status     = 'Escalated',
+            level      = 2,
+            assigned_to= NULL,
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>
