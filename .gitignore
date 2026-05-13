@@ -15,6 +15,15 @@ coverage/
 # OpenSpec working proposals and archived change records
 openspec/changes/
 
+# Local project documentation and OpenSpec authoring files
+PRD.md
+CLAUDE.md
+CLAUDE_副本.md
+dev-standards/
+openspec/project.md
+openspec/config.yaml
+openspec/specs/
+
 # Java build output
 backend/target/
 
