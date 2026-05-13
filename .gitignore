@@ -7,6 +7,14 @@ coverage/
 .env*
 !.env.example
 
+# Local IDE and agent configuration
+.vscode/
+.claude/settings.local.json
+.codex/
+
+# OpenSpec working proposals and archived change records
+openspec/changes/
+
 # Java build output
 backend/target/
 
