@@ -10,6 +10,7 @@ coverage/
 # Local IDE and agent configuration
 .vscode/
 .claude/settings.local.json
+.claude/
 .codex/
 
 # OpenSpec working proposals and archived change records
@@ -29,3 +30,6 @@ backend/target/
 
 # Vite cache
 .vite/
+
+# Root-level generated type artifacts
+src/components.d.ts
