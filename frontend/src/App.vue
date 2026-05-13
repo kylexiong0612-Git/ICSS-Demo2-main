@@ -25,23 +25,47 @@
           </button>
           <button
             class="nav-btn"
-            :class="{ active: currentPath.startsWith('/agent/1') }"
-            @click="router.push('/agent/1')"
+            :class="{ active: (currentPath.startsWith('/agent') && currentPath.includes('ops-service-flow/L1')) || currentPath === '/agent/1' }"
+            @click="router.push('/agent/stage/ops-service-flow/L1')"
           >
             <el-icon><User /></el-icon>
-            一线坐席
+            运营-一线坐席
           </button>
           <button
             class="nav-btn"
-            :class="{ active: currentPath.startsWith('/agent/2') }"
-            @click="router.push('/agent/2')"
+            :class="{ active: (currentPath.startsWith('/agent') && currentPath.includes('ops-service-flow/L2')) || currentPath === '/agent/2' }"
+            @click="router.push('/agent/stage/ops-service-flow/L2')"
           >
             <el-icon><User /></el-icon>
-            二线坐席
+            运营-二线专家
           </button>
           <button
             class="nav-btn"
-            :class="{ active: currentPath === '/admin' }"
+            :class="{ active: currentPath.startsWith('/agent') && currentPath.includes('system-fault-flow/L1') }"
+            @click="router.push('/agent/stage/system-fault-flow/L1')"
+          >
+            <el-icon><Tools /></el-icon>
+            报障-一线受理
+          </button>
+          <button
+            class="nav-btn"
+            :class="{ active: currentPath.startsWith('/agent') && currentPath.includes('system-fault-flow/L2') }"
+            @click="router.push('/agent/stage/system-fault-flow/L2')"
+          >
+            <el-icon><Tools /></el-icon>
+            报障-二线定位
+          </button>
+          <button
+            class="nav-btn"
+            :class="{ active: currentPath.startsWith('/agent') && currentPath.includes('system-fault-flow/L3') }"
+            @click="router.push('/agent/stage/system-fault-flow/L3')"
+          >
+            <el-icon><Tools /></el-icon>
+            报障-三线技术支持
+          </button>
+          <button
+            class="nav-btn"
+            :class="{ active: currentPath.startsWith('/admin') }"
             @click="router.push('/admin')"
           >
             <el-icon><DataBoard /></el-icon>
@@ -79,6 +103,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Tools } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()

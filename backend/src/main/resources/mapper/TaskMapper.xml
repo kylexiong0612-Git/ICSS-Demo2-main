@@ -16,15 +16,34 @@
         <result property="assignedTo"    column="assigned_to"/>
         <result property="unreadCount"   column="unread_count"/>
         <result property="level"         column="level"/>
+        <result property="workflowCode"  column="workflow_code"/>
+        <result property="currentStageCode" column="current_stage_code"/>
+        <result property="currentStageOrder" column="current_stage_order"/>
+        <result property="sourceTaskId"  column="source_task_id"/>
+        <result property="intentCode"    column="intent_code"/>
+        <result property="routeReason"   column="route_reason"/>
+        <result property="handoffConfidence" column="handoff_confidence"/>
         <result property="tags"          column="tags"
                 typeHandler="com.icss.handler.JsonListTypeHandler"/>
         <result property="createdAt"     column="created_at"/>
         <result property="updatedAt"     column="updated_at"/>
     </resultMap>
 
-    <select id="selectByLevelAndStatus" resultMap="taskResultMap">
+    <select id="selectTasks" resultMap="taskResultMap">
         SELECT * FROM service_task
-        WHERE level = #{level}
+        WHERE 1 = 1
+        <if test="workflowCode != null and workflowCode != ''">
+            AND workflow_code = #{workflowCode}
+        </if>
+        <if test="stageCode != null and stageCode != ''">
+            AND current_stage_code = #{stageCode}
+        </if>
+        <if test="customerId != null and customerId != ''">
+            AND customer_id = #{customerId}
+        </if>
+        <if test="level != null and (workflowCode == null or workflowCode == '') and (stageCode == null or stageCode == '')">
+            AND level = #{level}
+        </if>
         <if test="status != null and status != ''">
             AND status = #{status}
         </if>
@@ -38,10 +57,13 @@
     <insert id="insert">
         INSERT INTO service_task (id, customer_id, agent_id, request_source, status, priority,
                                   category, summary, ai_suggestion, assigned_to, unread_count,
-                                  level, tags, created_at, updated_at)
+                                  level, workflow_code, current_stage_code, current_stage_order,
+                                  source_task_id, intent_code, route_reason, handoff_confidence,
+                                  tags, created_at, updated_at)
         VALUES (#{id}, #{customerId}, #{agentId}, #{requestSource}, #{status}, #{priority},
                 #{category}, #{summary}, #{aiSuggestion}, #{assignedTo}, #{unreadCount},
-                #{level},
+                #{level}, #{workflowCode}, #{currentStageCode}, #{currentStageOrder},
+                #{sourceTaskId}, #{intentCode}, #{routeReason}, #{handoffConfidence},
                 #{tags, typeHandler=com.icss.handler.JsonListTypeHandler},
                 #{createdAt}, #{updatedAt})
     </insert>
@@ -55,6 +77,14 @@
             category     = #{category},
             assigned_to  = #{assignedTo},
             unread_count = #{unreadCount},
+            level        = #{level},
+            workflow_code = #{workflowCode},
+            current_stage_code = #{currentStageCode},
+            current_stage_order = #{currentStageOrder},
+            source_task_id = #{sourceTaskId},
+            intent_code   = #{intentCode},
+            route_reason  = #{routeReason},
+            handoff_confidence = #{handoffConfidence},
             tags         = #{tags, typeHandler=com.icss.handler.JsonListTypeHandler},
             updated_at   = #{updatedAt}
         WHERE id = #{id}
@@ -72,15 +102,6 @@
         SET status      = 'Processing',
             assigned_to = #{assignedTo},
             updated_at  = #{updatedAt}
-        WHERE id = #{id}
-    </update>
-
-    <update id="escalate">
-        UPDATE service_task
-        SET status     = 'Escalated',
-            level      = 2,
-            assigned_to= NULL,
-            updated_at = #{updatedAt}
         WHERE id = #{id}
     </update>
 

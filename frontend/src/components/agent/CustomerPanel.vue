@@ -1,164 +1,140 @@
 <template>
   <div class="customer-panel">
     <template v-if="task">
-      <!-- AI Copilot -->
-      <div class="copilot-section">
-        <div class="section-title">
-          <div class="copilot-icon">
-            <el-icon size="12" color="#fff"><Lightning /></el-icon>
-          </div>
-          <span>AI 辅助决策 (Copilot)</span>
-        </div>
-
-        <div class="copilot-grid">
-          <div class="copilot-card">
-            <p class="copilot-label">意图摘要</p>
-            <p class="copilot-text">{{ task.summary }}</p>
-          </div>
-          <div class="copilot-card">
-            <p class="copilot-label">处理建议</p>
-            <p class="copilot-text">{{ task.aiSuggestion }}</p>
-          </div>
-        </div>
-
-        <div class="script-block">
-          <p class="copilot-label">建议话术</p>
-          <p class="script-text">
-            "您好张先生，经我司精算团队评估，您保单因体检血压指标略高于标准范围，按规则需做费率调整，加费幅度为标准费率的15%，以保障保单长期有效。如有疑问可为您进一步说明精算依据。"
-          </p>
-        </div>
-
-        <div class="tags-row">
-          <el-tag v-for="tag in taskTags" :key="tag" size="small" type="success" effect="plain">
-            #{{ tag }}
-          </el-tag>
-        </div>
-      </div>
-
-      <!-- Customer 360 -->
       <div class="customer-360 custom-scrollbar">
-        <div class="customer-360-header">
-          <div class="header-left">
+        <section v-if="showSection('ai-copilot')" class="info-card copilot-card">
+          <div class="section-title">
+            <div class="copilot-icon">
+              <el-icon size="12" color="#fff"><Lightning /></el-icon>
+            </div>
+            <span>AI Copilot</span>
+          </div>
+          <div class="copilot-grid">
+            <div class="mini-card">
+              <p class="mini-label">意图摘要</p>
+              <p class="mini-text">{{ task.summary }}</p>
+            </div>
+            <div class="mini-card">
+              <p class="mini-label">处理建议</p>
+              <p class="mini-text">{{ task.aiSuggestion }}</p>
+            </div>
+          </div>
+          <div class="tags-row">
+            <el-tag v-for="tag in taskTags" :key="tag" size="small" type="success" effect="plain">
+              #{{ tag }}
+            </el-tag>
+          </div>
+        </section>
+
+        <section v-if="showSection('stage-timeline')" class="info-card">
+          <div class="section-title">
+            <el-icon size="12" color="#00a758"><Connection /></el-icon>
+            <span>阶段轨迹</span>
+          </div>
+          <div class="timeline-list">
+            <div
+              v-for="stage in workflowStages"
+              :key="stage.code"
+              class="timeline-item"
+              :class="{
+                active: stage.code === task.currentStageCode,
+                done: stage.stageOrder < task.currentStageOrder,
+              }"
+            >
+              <div class="timeline-dot">{{ stage.stageOrder }}</div>
+              <div class="timeline-body">
+                <p class="timeline-name">{{ stage.name }}</p>
+                <p class="timeline-role">{{ stage.roleLabel }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="showSection('knowledge-card')" class="info-card">
+          <div class="section-title">
+            <el-icon size="12" color="#f59e0b"><Collection /></el-icon>
+            <span>知识卡片</span>
+          </div>
+          <p class="knowledge-text">{{ knowledgeText }}</p>
+        </section>
+
+        <section v-if="showSection('customer-profile')" class="info-card">
+          <div class="section-title">
             <el-icon size="12" color="#00a758"><User /></el-icon>
-            <span>客户全景视图 (360°)</span>
+            <span>客户画像</span>
           </div>
-          <el-button text size="small" type="primary">
-            详情 <el-icon><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-
-        <template v-if="customer">
-        <!-- 客户基本信息 -->
-        <div class="customer-card">
-          <el-avatar :size="32" :src="`https://picsum.photos/seed/${customer.id}/100/100`" />
-          <div class="customer-info">
-            <div class="customer-name-row">
-              <span class="customer-name">{{ customer.name }}</span>
-              <el-tag size="small" type="warning" effect="plain">{{ customer.level }}</el-tag>
-            </div>
-            <span class="customer-phone">{{ customer.phone }}</span>
-          </div>
-        </div>
-
-        <!-- 持有保单 -->
-        <div class="info-section">
-          <p class="info-section-label">持有保单 ({{ customer.policies.length }})</p>
-          <div class="policy-grid">
-            <div
-              v-for="policy in customer.policies"
-              :key="policy.id"
-              class="policy-card"
-            >
-              <p class="policy-name">{{ policy.name }}</p>
-              <p class="policy-id">{{ policy.id }}</p>
-              <div class="policy-footer">
-                <span class="policy-premium">¥{{ policy.premium.toLocaleString() }}</span>
-                <el-tag size="small" type="success" effect="plain">有效</el-tag>
+          <template v-if="customer">
+            <div class="customer-card">
+              <el-avatar :size="36" :src="`https://picsum.photos/seed/${customer.id}/100/100`" />
+              <div class="customer-info">
+                <div class="customer-name-row">
+                  <span class="customer-name">{{ customer.name }}</span>
+                  <el-tag size="small" type="warning" effect="plain">{{ customer.level }}</el-tag>
+                </div>
+                <span class="customer-phone">{{ customer.phone }}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- 理赔 & 保全记录 -->
-        <div class="info-section">
-          <div class="record-grid-header">
-            <p class="info-section-label">既往理赔记录</p>
-            <p class="info-section-label">近期保全记录</p>
-          </div>
-          <div class="record-grid">
-            <template v-for="(claim, i) in customer.claims" :key="claim.id">
-              <div class="record-card">
-                <div class="record-row">
-                  <el-icon size="10" color="#3b82f6"><Wallet /></el-icon>
-                  <span class="record-type">{{ claim.type }}</span>
-                </div>
-                <p class="record-date">{{ claim.date }}</p>
-                <div class="record-footer">
-                  <span class="record-amount">¥{{ claim.amount.toLocaleString() }}</span>
-                  <el-tag size="small" type="success" effect="plain">{{ claim.status }}</el-tag>
-                </div>
+            <div class="agent-card">
+              <div class="agent-avatar">
+                <el-icon size="14" color="#ffd700"><UserFilled /></el-icon>
               </div>
-              <div v-if="customer.policyServices[i]" class="record-card">
-                <div class="record-row">
-                  <el-icon size="10" color="#f59e0b"><Document /></el-icon>
-                  <span class="record-type">{{ customer.policyServices[i].type }}</span>
-                </div>
-                <p class="record-date">{{ customer.policyServices[i].date }}</p>
-                <el-tag size="small" type="success" effect="plain">{{ customer.policyServices[i].status }}</el-tag>
+              <div class="agent-info">
+                <p class="agent-name">{{ customer.agent.name }}</p>
+                <p class="agent-sub">{{ customer.agent.branch }} · 工号 {{ customer.agent.code }}</p>
               </div>
-              <div v-else />
-            </template>
-          </div>
-        </div>
-
-        <!-- 代理人信息 -->
-        <div class="agent-card">
-          <div class="agent-avatar">
-            <el-icon size="14" color="#ffd700"><User /></el-icon>
-          </div>
-          <div class="agent-info">
-            <p class="agent-name">{{ customer.agent.name }}</p>
-            <p class="agent-sub">{{ customer.agent.branch }} · 工号 {{ customer.agent.code }}</p>
-          </div>
-          <el-button size="small" type="info" plain>联系</el-button>
-        </div>
-
-        <!-- 历史服务记录 & 故障报障 -->
-        <div class="bottom-grid">
-          <div class="history-col">
-            <div class="history-header">
-              <el-icon size="12" color="#8e90a2"><Clock /></el-icon>
-              <p class="info-section-label">历史服务记录 ({{ customer.serviceHistory.length }})</p>
             </div>
-            <div
-              v-for="item in customer.serviceHistory.slice(0, 2)"
-              :key="item.id"
-              class="history-card"
-            >
+          </template>
+          <div v-else class="empty-block">暂无客户信息</div>
+        </section>
+
+        <section v-if="showSection('policy-list')" class="info-card">
+          <div class="section-title">
+            <el-icon size="12" color="#00a758"><Tickets /></el-icon>
+            <span>保单信息</span>
+          </div>
+          <template v-if="customer?.policies?.length">
+            <div class="policy-grid">
+              <div v-for="policy in customer.policies" :key="policy.id" class="policy-card">
+                <p class="policy-name">{{ policy.name }}</p>
+                <p class="policy-id">{{ policy.id }}</p>
+                <div class="policy-footer">
+                  <span class="policy-premium">¥{{ Number(policy.premium).toLocaleString() }}</span>
+                  <el-tag size="small" type="success" effect="plain">{{ policy.status }}</el-tag>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div v-else class="empty-block">暂无保单信息</div>
+        </section>
+
+        <section v-if="showSection('history-records')" class="info-card">
+          <div class="section-title">
+            <el-icon size="12" color="#8e90a2"><Clock /></el-icon>
+            <span>历史记录</span>
+          </div>
+          <template v-if="historyItems.length">
+            <div v-for="item in historyItems" :key="item.id" class="history-card">
               <div class="history-meta">
                 <span class="history-type">{{ item.type }}</span>
                 <span class="history-date">{{ item.date }}</span>
               </div>
               <p class="history-summary">{{ item.summary }}</p>
-              <el-tag
-                :type="item.status === '已关闭' ? 'info' : 'success'"
-                size="small"
-                effect="plain"
-              >
-                {{ item.status }}
-              </el-tag>
+              <el-tag size="small" effect="plain">{{ item.status }}</el-tag>
             </div>
-          </div>
+          </template>
+          <div v-else class="empty-block">暂无历史记录</div>
+        </section>
 
+        <section v-if="showSection('fault-report-entry')" class="info-card danger-card">
+          <div class="section-title">
+            <el-icon size="12" color="#ec6453"><WarnTriangleFilled /></el-icon>
+            <span>报障入口</span>
+          </div>
           <button class="fault-btn" @click="openFaultDialog">
-            <el-icon size="32" color="#ec6453"><WarnTriangleFilled /></el-icon>
-            <span>生产故障报障</span>
+            <el-icon size="24" color="#ec6453"><WarnTriangleFilled /></el-icon>
+            <span>宏e站一键报障</span>
           </button>
-        </div>
-        </template>
-        <div v-else class="customer-empty">
-          <p>该任务暂无关联客户信息</p>
-        </div>
+        </section>
       </div>
     </template>
 
@@ -176,26 +152,93 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
-  Lightning,
-  User,
-  ArrowRight,
-  Wallet,
-  Document,
   Clock,
+  Collection,
+  Connection,
+  Lightning,
+  Tickets,
+  User,
+  UserFilled,
   WarnTriangleFilled,
 } from '@element-plus/icons-vue'
-import type { ServiceTask } from '@/types'
+import { getCustomer } from '@/api/customer'
 import FaultReportDialog from './FaultReportDialog.vue'
+import type { AgentWorkflowStage, Customer, ServiceTask } from '@/types'
 
-const props = defineProps<{ task: ServiceTask | null }>()
+const props = defineProps<{
+  task: ServiceTask | null
+  visibleSections?: string[]
+  workflowStages?: AgentWorkflowStage[]
+}>()
 
 const emit = defineEmits<{
   faultReported: [taskId: string]
 }>()
 
 const dialogVisible = ref(false)
+const customer = ref<Customer | null>(null)
+
+const STATIC_HISTORY: Record<string, Array<{ id: string; date: string; type: string; summary: string; status: string }>> = {
+  'CUST-882': [
+    {
+      id: 'SVC-2026-015',
+      date: '2026-02-28',
+      type: '保全服务',
+      summary: '客户申请变更受益人信息，已完成身份核验并提交变更申请。',
+      status: '已完成',
+    },
+    {
+      id: 'SVC-2025-098',
+      date: '2025-11-15',
+      type: '理赔咨询',
+      summary: '就意外伤害险理赔流程进行咨询，已提供材料清单及指引。',
+      status: '已完成',
+    },
+  ],
+}
+
+watch(
+  () => props.task?.customerId,
+  async customerId => {
+    if (!customerId) {
+      customer.value = null
+      return
+    }
+    try {
+      customer.value = await getCustomer(customerId)
+    } catch (error) {
+      console.warn('[CustomerPanel] 加载客户信息失败', error)
+      customer.value = null
+    }
+  },
+  { immediate: true },
+)
+
+const workflowStages = computed(() => props.workflowStages ?? [])
+const historyItems = computed(() => {
+  if (!props.task?.customerId) return []
+  return STATIC_HISTORY[props.task.customerId] ?? []
+})
+const taskTags = computed(() => {
+  if (!props.task) return []
+  const tags = [...(props.task.tags ?? [])]
+  if (!tags.length) tags.push(props.task.category)
+  return tags
+})
+const knowledgeText = computed(() => {
+  if (!props.task) return '暂无知识推荐'
+  if (props.task.workflowCode === 'system-fault-flow') {
+    return '优先核对报错时间、影响范围、复现路径和关联系统，再判断是否进入三线技术支持。'
+  }
+  return '优先结合客户等级、保单状态和历史服务记录，使用标准合规话术完成答复。'
+})
+
+function showSection(sectionCode: string) {
+  if (!props.visibleSections?.length) return true
+  return props.visibleSections.includes(sectionCode)
+}
 
 function openFaultDialog() {
   dialogVisible.value = true
@@ -204,58 +247,6 @@ function openFaultDialog() {
 function handleFaultSubmitted(taskId: string) {
   emit('faultReported', taskId)
 }
-
-interface MockCustomer {
-  id: string
-  name: string
-  phone: string
-  level: string
-  policies: { id: string; name: string; status: string; premium: number; startDate: string }[]
-  agent: { id: string; name: string; code: string; phone: string; branch: string }
-  claims: { id: string; type: string; date: string; status: string; amount: number }[]
-  policyServices: { id: string; type: string; date: string; status: string }[]
-  serviceHistory: { id: string; date: string; type: string; summary: string; status: string }[]
-}
-
-const MOCK_CUSTOMERS: Record<string, MockCustomer> = {
-  'CUST-882': {
-    id: 'CUST-882',
-    name: '张伟',
-    phone: '138****8829',
-    level: 'Gold',
-    policies: [
-      { id: 'POL-101', name: '宏掌门终身寿险', status: 'Active', premium: 12000, startDate: '2023-05-12' },
-      { id: 'POL-102', name: '宏掌门意外伤害保险', status: 'Active', premium: 500, startDate: '2024-01-01' },
-    ],
-    agent: { id: 'AG-99', name: '李芳', code: '880012', phone: '139****1122', branch: '上海分公司' },
-    claims: [
-      { id: 'CLM-2024-001', type: '意外伤害理赔', date: '2024-08-15', status: '已结案', amount: 8500 },
-      { id: 'CLM-2023-007', type: '住院医疗理赔', date: '2023-11-20', status: '已结案', amount: 23600 },
-    ],
-    policyServices: [
-      { id: 'SRV-2025-003', type: '受益人变更', date: '2025-03-01', status: '已完成' },
-      { id: 'SRV-2024-012', type: '地址信息更新', date: '2024-12-10', status: '已完成' },
-    ],
-    serviceHistory: [
-      { id: 'SVC-2026-015', date: '2026-02-28', type: '保全服务', summary: '客户申请变更受益人信息，已完成身份核验并提交变更申请，次日生效。', status: '已完成' },
-      { id: 'SVC-2025-098', date: '2025-11-15', type: '理赔咨询', summary: '就意外伤害险理赔流程进行咨询，提供完整材料清单及线上提交指引，客户满意。', status: '已完成' },
-    ],
-  },
-}
-
-// 根据当前任务的 customerId 动态查找客户数据
-const customer = computed(() => {
-  if (!props.task?.customerId) return null
-  return MOCK_CUSTOMERS[props.task.customerId] ?? null
-})
-
-// 标签从任务 category 和优先级派生
-const taskTags = computed(() => {
-  if (!props.task) return []
-  const tags = [props.task.category]
-  if (props.task.priority === 'High' || props.task.priority === 'Urgent') tags.push('高优')
-  return tags
-})
 </script>
 
 <style lang="scss" scoped>
@@ -268,29 +259,46 @@ const taskTags = computed(() => {
   overflow: hidden;
 }
 
-.panel-empty,
-.customer-empty {
+.customer-360 {
   flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel-empty,
+.empty-block {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 88px;
   font-size: 13px;
   color: var(--desc-color);
 }
 
-// AI Copilot
-.copilot-section {
-  flex-shrink: 0;
+.info-card {
+  border: 1px solid var(--blod-border-color);
+  border-radius: 12px;
+  background-color: #fff;
   padding: 12px;
-  border-bottom: 1px solid var(--blod-border-color);
-  background-color: rgba(0, 167, 88, 0.03);
+}
+
+.danger-card {
+  border-color: rgba(236, 100, 83, 0.25);
+  background: linear-gradient(180deg, rgba(236, 100, 83, 0.04), rgba(236, 100, 83, 0.01));
+}
+
+.copilot-card {
+  background: linear-gradient(180deg, rgba(0, 167, 88, 0.05), rgba(0, 167, 88, 0.01));
 }
 
 .section-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-size: 12px;
   font-weight: 700;
   color: var(--text-color);
@@ -306,345 +314,143 @@ const taskTags = computed(() => {
   justify-content: center;
 }
 
-.copilot-grid {
+.copilot-grid,
+.policy-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
-.copilot-card {
+.copilot-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.mini-card,
+.policy-card,
+.history-card {
   background-color: #fff;
-  border: 1px solid rgba(0, 167, 88, 0.15);
+  border: 1px solid var(--blod-border-color);
   border-radius: 8px;
   padding: 10px;
-  min-height: 72px;
 }
 
-.copilot-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--primary-color);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
+.mini-label,
+.timeline-role,
+.policy-id,
+.history-date,
+.customer-phone,
+.agent-sub {
+  font-size: 11px;
+  color: var(--label-desc-color);
 }
 
-.copilot-text {
+.mini-text,
+.knowledge-text,
+.history-summary,
+.policy-name {
   font-size: 12px;
-  color: var(--text-color);
-  line-height: 1.5;
-}
-
-.script-block {
-  background-color: rgba(0, 167, 88, 0.05);
-  border-left: 2px solid var(--primary-color);
-  border-radius: 4px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-}
-
-.script-text {
-  font-size: 12px;
-  color: var(--text-color);
   line-height: 1.6;
-  font-style: italic;
+  color: var(--text-color);
 }
 
 .tags-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+  margin-top: 10px;
 }
 
-// Customer 360
-.customer-360 {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
+.timeline-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.customer-360-header {
+.timeline-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: 10px;
+  opacity: 0.6;
+
+  &.active {
+    opacity: 1;
+  }
+
+  &.done .timeline-dot {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
 }
 
-.header-left {
+.timeline-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--blod-border-color);
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.timeline-name,
+.customer-name,
+.agent-name,
+.history-type {
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-color);
 }
 
-.customer-card {
+.customer-card,
+.agent-card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background-color: var(--gray-color);
-  border-radius: 12px;
-  border: 1px solid var(--blod-border-color);
-}
-
-.customer-info {
-  flex: 1;
-  min-width: 0;
+  gap: 10px;
 }
 
 .customer-name-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
-}
-
-.customer-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-color);
-}
-
-.customer-phone {
-  font-size: 11px;
-  color: var(--label-desc-color);
-}
-
-// Info sections
-.info-section {
-  flex-shrink: 0;
-}
-
-.info-section-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--label-desc-color);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   margin-bottom: 4px;
 }
 
-.policy-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-}
-
-.policy-card {
-  padding: 6px;
-  background-color: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: border-color 0.15s;
-
-  &:hover {
-    border-color: rgba(0, 167, 88, 0.4);
-  }
-}
-
-.policy-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 2px;
-}
-
-.policy-id {
-  font-size: 10px;
-  color: var(--label-desc-color);
-  margin-bottom: 4px;
-}
-
-.policy-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.policy-premium {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-color);
-}
-
-.record-grid-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-
-.record-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-}
-
-.record-card {
-  padding: 6px;
-  background-color: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-
-.record-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 2px;
-}
-
-.record-type {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.record-date {
-  font-size: 10px;
-  color: var(--label-desc-color);
-  margin-bottom: 4px;
-}
-
-.record-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.record-amount {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-color);
-}
-
-// Agent card
-.agent-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background-color: var(--text-color);
-  border-radius: 12px;
-  color: #fff;
-  position: relative;
-  overflow: hidden;
-}
-
-.agent-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
+.customer-info,
 .agent-info {
-  flex: 1;
   min-width: 0;
 }
 
-.agent-name {
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.agent-sub {
-  font-size: 10px;
-  opacity: 0.6;
-  margin-top: 2px;
-}
-
-// Bottom section
-.bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  flex: 1;
-}
-
-.history-col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.history-header {
+.agent-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(255, 215, 0, 0.12);
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
 }
 
-.history-card {
-  padding: 6px;
-  background-color: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-
+.policy-footer,
 .history-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2px;
-}
-
-.history-type {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.history-date {
-  font-size: 10px;
-  color: var(--label-desc-color);
-}
-
-.history-summary {
-  font-size: 11px;
-  color: var(--text-color);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: 4px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .fault-btn {
+  width: 100%;
+  border: 1px dashed rgba(236, 100, 83, 0.45);
+  border-radius: 12px;
+  padding: 14px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background-color: rgba(236, 100, 83, 0.1);
-  border: 1px solid rgba(236, 100, 83, 0.2);
-  border-radius: 12px;
-  color: var(--danger-color);
-  font-size: 12px;
+  gap: 10px;
+  font-size: 14px;
   font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.15s;
-  width: 100%;
-
-  &:hover {
-    background-color: rgba(236, 100, 83, 0.2);
-  }
+  color: #ec6453;
+  background-color: rgba(236, 100, 83, 0.04);
 }
 </style>

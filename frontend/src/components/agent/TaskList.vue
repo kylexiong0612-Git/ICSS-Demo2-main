@@ -2,7 +2,7 @@
   <div class="task-list-panel">
     <!-- 标签页切换 -->
     <div class="tab-bar">
-      <div class="tab-switcher">
+      <div v-if="showPublicPool !== false && showPersonalPool !== false" class="tab-switcher">
         <button
           class="tab-btn"
           :class="{ active: activeTab === 'public' }"
@@ -18,9 +18,13 @@
           个人工作池 ({{ personalCount }})
         </button>
       </div>
+      <div v-else class="single-tab">
+        <span>{{ showPublicPool === false ? '个人工作池' : '任务公共池' }}</span>
+        <b>{{ showPublicPool === false ? personalCount : publicCount }}</b>
+      </div>
       <div class="tab-extra">
         <el-icon size="13" class="extra-icon"><Clock /></el-icon>
-        <span>今日已处理: <b>24</b></span>
+        <span>{{ workflowCode }} / {{ stageCode }}</span>
       </div>
     </div>
 
@@ -78,7 +82,7 @@
             {{ new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
           </span>
           <el-button
-            v-if="activeTab === 'public'"
+            v-if="activeTab === 'public' && showPublicPool !== false"
             size="small"
             type="primary"
             @click.stop="$emit('grab', task.id)"
@@ -102,8 +106,11 @@ import { useTaskStore } from '@/stores/taskStore'
 import type { ServiceTask } from '@/types'
 
 const props = defineProps<{
-  level: 1 | 2
+  workflowCode: string
+  stageCode: string
   selectedTaskId?: string
+  showPublicPool?: boolean
+  showPersonalPool?: boolean
 }>()
 
 defineEmits<{
@@ -112,23 +119,34 @@ defineEmits<{
 }>()
 
 const taskStore = useTaskStore()
-const activeTab = ref<'public' | 'personal'>('public')
+const activeTab = ref<'public' | 'personal'>(props.showPublicPool === false ? 'personal' : 'public')
 const searchKey = ref('')
 
 const publicCount = computed(
-  () => taskStore.tasks.filter(t => t.level === props.level && t.status === 'Pending').length,
+  () =>
+    taskStore.tasks.filter(
+      t =>
+        t.workflowCode === props.workflowCode &&
+        t.currentStageCode === props.stageCode &&
+        t.status === 'Pending',
+    ).length,
 )
 const personalCount = computed(
   () =>
     taskStore.tasks.filter(
-      t => t.level === props.level && t.status === 'Processing' && t.assignedTo === 'ME',
+      t =>
+        t.workflowCode === props.workflowCode &&
+        t.currentStageCode === props.stageCode &&
+        t.status === 'Processing' &&
+        t.assignedTo === 'ME',
     ).length,
 )
 
 const filteredTasks = computed(() => {
   let list = taskStore.tasks.filter(
     t =>
-      t.level === props.level &&
+      t.workflowCode === props.workflowCode &&
+      t.currentStageCode === props.stageCode &&
       (activeTab.value === 'public'
         ? t.status === 'Pending'
         : t.status === 'Processing' && t.assignedTo === 'ME'),
@@ -169,6 +187,15 @@ const filteredTasks = computed(() => {
   border-radius: 6px;
   padding: 2px;
   gap: 2px;
+}
+
+.single-tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-color);
 }
 
 .tab-btn {

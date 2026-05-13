@@ -8,8 +8,11 @@ import java.util.List;
 
 @Mapper
 public interface TaskMapper {
-    List<ServiceTask> selectByLevelAndStatus(@Param("level") Integer level,
-                                             @Param("status") String status);
+    List<ServiceTask> selectTasks(@Param("level") Integer level,
+                                  @Param("workflowCode") String workflowCode,
+                                  @Param("stageCode") String stageCode,
+                                  @Param("customerId") String customerId,
+                                  @Param("status") String status);
 
     ServiceTask selectById(String id);
 
@@ -24,7 +27,4 @@ public interface TaskMapper {
     int grab(@Param("id") String id,
              @Param("assignedTo") String assignedTo,
              @Param("updatedAt") Long updatedAt);
-
-    int escalate(@Param("id") String id,
-                 @Param("updatedAt") Long updatedAt);
 }

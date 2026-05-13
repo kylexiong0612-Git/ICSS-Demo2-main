@@ -30,7 +30,8 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import HomeScreen from '@/components/customer/HomeScreen.vue'
 import ChatInterface from '@/components/customer/ChatInterface.vue'
-import { getBotResponse, preProcessTask } from '@/api/ai'
+import { getBotResponse } from '@/api/ai'
+import { createHandoffTask } from '@/api/task'
 import { useTaskStore } from '@/stores/taskStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { Message, ServiceTask } from '@/types'
@@ -45,33 +46,17 @@ const isTransferring = ref(false)
 
 // 当前客户对应的活跃任务（customerId = CUST-882）
 const activeTask = computed(() =>
-  taskStore.tasks.find(
-    t => t.customerId === 'CUST-882' && t.status !== 'Completed',
-  ),
+  [...taskStore.tasks]
+    .filter(t => t.customerId === 'CUST-882' && t.status !== 'Completed')
+    .sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null,
 )
 
-// 未读消息数：task chatHistory 中时间戳晚于上次打开聊天的坐席消息数（computed 自动响应）
+// 未读消息数：本地会话中时间戳晚于上次打开聊天的坐席消息数
 const customerUnreadCount = computed(() => {
-  const history = activeTask.value?.chatHistory
-  if (!history) return 0
-  return history.filter(
+  return messages.value.filter(
     m => m.role === 'agent' && m.timestamp > chatStore.lastChatOpenedAt,
   ).length
 })
-
-// 当坐席回复时，同步到 messages
-watch(
-  () => activeTask.value?.chatHistory,
-  history => {
-    if (!history) return
-    const localIds = new Set(messages.value.map(m => m.id))
-    const newMsgs = history.filter(m => !localIds.has(m.id))
-    if (newMsgs.length > 0) {
-      messages.value = [...messages.value, ...newMsgs]
-    }
-  },
-  { deep: true },
-)
 
 // 持久化聊天历史
 watch(messages, msgs => {
@@ -79,6 +64,7 @@ watch(messages, msgs => {
 })
 
 onMounted(async () => {
+  await taskStore.loadCustomerTasks('CUST-882')
   // 优先从后端加载历史（与 localStorage 缓存合并）
   await chatStore.loadHistoryFromBackend('CUST-882')
 
@@ -95,16 +81,6 @@ onMounted(async () => {
     }
     messages.value = [welcomeMsg]
     chatStore.persistMessage('CUST-882', welcomeMsg)
-  }
-
-  // 合并坐席在组件卸载期间发送的消息（导航离开再返回时 watch 不会重放历史变更）
-  const history = activeTask.value?.chatHistory
-  if (history) {
-    const localIds = new Set(messages.value.map(m => m.id))
-    const newMsgs = history.filter(m => !localIds.has(m.id))
-    if (newMsgs.length > 0) {
-      messages.value = [...messages.value, ...newMsgs]
-    }
   }
 })
 
@@ -132,34 +108,62 @@ async function handleSend(text: string) {
   const wantsTransfer = transferKeywords.some(kw => text.includes(kw))
 
   if (wantsTransfer && !isTransferring.value) {
+    if (activeTask.value && activeTask.value.status !== 'Completed') {
+      const existingTaskMsg: Message = {
+        id: crypto.randomUUID(),
+        role: 'bot',
+        content: `您当前已有人工服务单正在处理中，已进入${activeTask.value.category}专席，请耐心等待。`,
+        timestamp: Date.now(),
+        type: 'text',
+      }
+      messages.value.push(existingTaskMsg)
+      chatStore.persistMessage('CUST-882', existingTaskMsg)
+      return
+    }
+
     isTransferring.value = true
     const transferMsg: Message = {
       id: crypto.randomUUID(),
       role: 'bot',
-      content: '好的，正在为您转接人工坐席，请稍候...',
+      content: '好的，正在为您识别服务意图并转接对应人工专席，请稍候...',
       timestamp: Date.now(),
       type: 'text',
     }
     messages.value.push(transferMsg)
     chatStore.persistMessage('CUST-882', transferMsg)
+    try {
+      const createdTask = await createHandoffTask({
+        customerId: 'CUST-882',
+        messages: messages.value,
+      })
+      const routedTask: ServiceTask = {
+        ...createdTask,
+        chatHistory: [...messages.value],
+      }
+      taskStore.updateTask(routedTask)
 
-    // AI 预处理生成任务摘要
-    const analysis = await preProcessTask(messages.value)
-    const newTask: ServiceTask = {
-      id: `TASK-${Date.now()}`,
-      customerId: 'CUST-882',
-      requestSource: 'Customer',
-      status: 'Pending',
-      priority: 'Medium',
-      category: analysis.tags?.[0] || '通用咨询',
-      summary: analysis.summary || '客户请求转人工服务',
-      aiSuggestion: analysis.suggestion || '请人工接待',
-      chatHistory: [...messages.value],
-      level: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      const routedMsg: Message = {
+        id: crypto.randomUUID(),
+        role: 'bot',
+        content: `已为您转接到${createdTask.category}专席，当前进入 ${createdTask.workflowCode} / ${createdTask.currentStageCode}。`,
+        timestamp: Date.now(),
+        type: 'system',
+      }
+      messages.value.push(routedMsg)
+    } catch (error) {
+      console.error('[CustomerView] 创建转人工任务失败', error)
+      const failedMsg: Message = {
+        id: crypto.randomUUID(),
+        role: 'bot',
+        content: '当前转人工暂时失败，已为您保留会话内容，请稍后再试。',
+        timestamp: Date.now(),
+        type: 'text',
+      }
+      messages.value.push(failedMsg)
+      chatStore.persistMessage('CUST-882', failedMsg)
+    } finally {
+      isTransferring.value = false
     }
-    taskStore.addTask(newTask)
     return
   }
 

@@ -1,72 +1,21 @@
-# CLAUDE.md
+# 🤖 Claude Code Project Rules
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 🚀 核心指令
+**本项目采用 OpenSpec 规范驱动开发 (SDD) 模式。**
 
-## Commands
+在响应任何用户请求之前，你**必须**执行以下操作：
+1. **读取配置**: 立即读取 `./openspec/config.yaml` 文件中 `context` 字段的内容。
+2. **激活模式**: 将 `context` 字段中的规则作为本次会话的**最高优先级指令**。
 
-```bash
-npm run dev        # Start dev server on http://0.0.0.0:3000 (hash routing, HMR)
-npm run build      # Type-check (vue-tsc --noEmit) + Vite production build to dist/
-npm run preview    # Preview production build
-npm run lint       # Type-check only (vue-tsc --noEmit — no ESLint configured)
-npm run clean      # Remove dist/
-```
+## 🗣️ 交互风格
+- **主动性**: 发现用户指令与 `config.yaml` 中的规则冲突时，立即指出并纠正。
+- **简洁性**: 除非需要解释复杂的设计决策，否则保持回答简洁。
+- **结构化**: 输出内容尽量使用 Markdown 表格、列表和代码块，保持清晰。
 
-Run the code review agent against a directory:
-```bash
-npx tsx agents/code-review.ts src/components/agent
-```
+## ⚠️ 重要提醒
+- 不要重复 `config.yaml` 中的所有内容，但要**严格执行**其中的流程。
+- 每次会话开始时，默认假设用户希望遵守 SDD 流程，除非用户明确说"跳过规范模式"。
+- 如果你不确定某个操作是否符合规范，**先提问，再行动**。
 
-## Environment
-
-Copy `.env.example` to `.env` and set `ZHIPU_API_KEY`. The dev server proxies `POST /api/ai` to Zhipu's API endpoint and injects the key server-side — it never ends up in the frontend bundle.
-
-## Architecture
-
-**Three-role SPA** demonstrating an insurance omnichannel service system. Routes (hash mode):
-
-| Route | View | Purpose |
-|-------|------|---------|
-| `/#/customer` | CustomerView | Mobile phone-frame UI for end customers |
-| `/#/agent/1` | AgentWorkstationView | L1 agent 3-panel workstation |
-| `/#/agent/2` | AgentWorkstationView | L2 agent workstation (same component, different level prop) |
-| `/#/admin` | AdminDashboardView | KPI cards + ECharts trend/category charts |
-
-**State flow**: All service tasks live in `taskStore` (Pinia). The customer chat creates tasks via `preProcessTask()` (Zhipu JSON-mode call → structured `{summary, suggestion, tags}`). Agents read those tasks from the same store and mutate them (`grabTask`, `escalateTask`, complete). Chat history is persisted to localStorage via `chatStore`.
-
-**AI calls** (`src/api/ai.ts`):
-- `getBotResponse(message, history)` — chat completion with "宏小二" system prompt
-- `preProcessTask(history)` — JSON-mode call returning task metadata for agent panel
-
-**Component tree**:
-- `App.vue` → header + `<router-view>`
-- `CustomerView` → `HomeScreen` + `ChatInterface`
-- `AgentWorkstationView` → `TaskList` | `ChatPanel` | `CustomerPanel`
-- `AdminDashboardView` → `StatsGrid` + `TrendChart` + `CategoryChart` + `IssueList`
-
-## Development Standards
-
-Project-specific coding standards are maintained in the `dev-standards/` directory:
-
-- [dev-standards/开发规范-PC端.md](dev-standards/前端开发规范-PC端.md) — Desktop/agent/admin UI conventions
-- [dev-standards/开发规范-移动端.md](dev-standards/前端开发规范-移动端.md) — Mobile customer UI conventions
-
-Read the relevant file before making changes to the corresponding UI layer.
-
-## Code Conventions
-
-- Vue 3 Composition API (`<script setup lang="ts">`) throughout
-- Scoped Sass for component styles; CSS custom properties defined in `src/assets/styles/variable.scss`
-- Path alias `@/` maps to `src/`
-- Element Plus for desktop/agent/admin UI; Vant for the mobile customer UI
-- `postcss-pxtorem` converts `px` → `rem` for mobile; `amfe-flexible` sets the root font size
-- Auto-imports are configured for Vue/Vant/Element Plus APIs — do not manually import these
-- All shared TypeScript interfaces are in `src/types/index.ts`
-- Demo prototype: no real backend — all task data is Pinia in-memory (seeded with 2 tasks: TASK-001, TASK-002)
-
-## Key Domain Concepts
-
-- **ServiceTask** statuses: `Pending` → `Processing` → `Completed` (or `Escalated`)
-- **Task levels**: 1 = L1 agent, 2 = L2 specialist; escalation moves level 1→2
-- **Customer tiers**: `普通` / `银卡` / `金卡` / `白金` (stored in Customer type)
-- **Bot persona**: "宏小二" — Zhipu GLM-4-Flash, insurance service assistant
+---
+*Last Updated: 2026-04-14*

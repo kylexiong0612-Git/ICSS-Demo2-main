@@ -22,8 +22,12 @@ declare module 'vue' {
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElInput: typeof import('element-plus/es')['ElInput']
+    ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElSelect: typeof import('element-plus/es')['ElSelect']
+    ElSwitch: typeof import('element-plus/es')['ElSwitch']
+    ElTable: typeof import('element-plus/es')['ElTable']
+    ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTag: typeof import('element-plus/es')['ElTag']
     FaultReportDialog: typeof import('./components/agent/FaultReportDialog.vue')['default']
     HomeScreen: typeof import('./components/customer/HomeScreen.vue')['default']
@@ -33,5 +37,8 @@ declare module 'vue' {
     StatsGrid: typeof import('./components/admin/StatsGrid.vue')['default']
     TaskList: typeof import('./components/agent/TaskList.vue')['default']
     TrendChart: typeof import('./components/admin/TrendChart.vue')['default']
+  }
+  export interface ComponentCustomProperties {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
   }
 }

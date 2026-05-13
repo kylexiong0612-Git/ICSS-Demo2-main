@@ -145,7 +145,7 @@ const inputText = ref('')
 const isInputFocused = ref(false)
 const scrollRef = ref<HTMLDivElement | null>(null)
 
-const quickActions = ['理赔指引', '保单查询', '转人工', '投诉建议']
+const quickActions = ['预核保', '保单查询', '理赔指引', '投诉建议']
 
 // 新消息时滚动到底部
 watch(

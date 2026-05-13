@@ -21,6 +21,13 @@ public class ServiceTask {
     private Integer unreadCount;
     /** 1=一线 2=二线 */
     private Integer level;
+    private String workflowCode;
+    private String currentStageCode;
+    private Integer currentStageOrder;
+    private String sourceTaskId;
+    private String intentCode;
+    private String routeReason;
+    private Double handoffConfidence;
     private List<String> tags;
     private Long createdAt;
     private Long updatedAt;

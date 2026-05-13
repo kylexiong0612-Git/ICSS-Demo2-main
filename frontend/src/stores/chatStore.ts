@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Message } from '@/types'
+import { getChatHistory } from '@/api/chat'
 import request from '@/utils/request'
 
 export const useChatStore = defineStore(
@@ -50,7 +51,7 @@ export const useChatStore = defineStore(
      */
     async function loadHistoryFromBackend(customerId: string): Promise<void> {
       try {
-        const data = (await request.get(`/api/chats/${customerId}`)) as unknown as Message[]
+        const data = await getChatHistory(customerId)
         const backendIds = new Set(data.map((m: Message) => m.id))
         const unsynced = customerHistory.value.filter(m => !backendIds.has(m.id))
         customerHistory.value = [...data, ...unsynced]

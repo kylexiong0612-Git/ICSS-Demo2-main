@@ -23,7 +23,8 @@
       "Bash(PATH=\"/opt/homebrew/opt/mysql-client/bin:/opt/homebrew/opt/mysql/bin:$PATH\" mysql -u root -h 127.0.0.1 -P 3306 -e \"SELECT 1;\")",
       "Bash(mvn spring-boot:run)",
       "Bash(curl -s http://localhost:8080/api/tasks?level=1)",
-      "Bash(python3 -m json.tool)"
+      "Bash(python3 -m json.tool)",
+      "Bash(mvn spring-boot:run -q)"
     ]
   }
 }

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icss.mapper.WorkflowConfigMapper">
+
+    <resultMap id="templateResultMap" type="com.icss.model.AgentWorkflowTemplate">
+        <id property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="categoryScope" column="category_scope"
+                typeHandler="com.icss.handler.JsonListTypeHandler"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="stageResultMap" type="com.icss.model.AgentWorkflowStage">
+        <id property="id" column="id"/>
+        <result property="workflowCode" column="workflow_code"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="stageOrder" column="stage_order"/>
+        <result property="roleLabel" column="role_label"/>
+        <result property="description" column="description"/>
+        <result property="allowedActions" column="allowed_actions"
+                typeHandler="com.icss.handler.JsonListTypeHandler"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="routeRuleResultMap" type="com.icss.model.AgentWorkflowRouteRule">
+        <id property="id" column="id"/>
+        <result property="intentCode" column="intent_code"/>
+        <result property="intentName" column="intent_name"/>
+        <result property="targetWorkflowCode" column="target_workflow_code"/>
+        <result property="entryStageCode" column="entry_stage_code"/>
+        <result property="priorityStrategy" column="priority_strategy"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="layoutResultMap" type="com.icss.model.WorkbenchLayoutConfig">
+        <id property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="workflowCode" column="workflow_code"/>
+        <result property="stageCode" column="stage_code"/>
+        <result property="regions" column="regions"
+                typeHandler="com.icss.handler.JsonObjectTypeHandler"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectAllTemplates" resultMap="templateResultMap">
+        SELECT * FROM agent_workflow_template
+        ORDER BY code ASC
+    </select>
+
+    <select id="selectTemplateByCode" resultMap="templateResultMap">
+        SELECT * FROM agent_workflow_template
+        WHERE code = #{code}
+    </select>
+
+    <select id="selectStagesByWorkflowCode" resultMap="stageResultMap">
+        SELECT * FROM agent_workflow_stage
+        WHERE workflow_code = #{workflowCode}
+        ORDER BY stage_order ASC
+    </select>
+
+    <select id="selectStage" resultMap="stageResultMap">
+        SELECT * FROM agent_workflow_stage
+        WHERE workflow_code = #{workflowCode}
+          AND code = #{stageCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectFirstStage" resultMap="stageResultMap">
+        SELECT * FROM agent_workflow_stage
+        WHERE workflow_code = #{workflowCode}
+        ORDER BY stage_order ASC
+        LIMIT 1
+    </select>
+
+    <select id="selectNextStage" resultMap="stageResultMap">
+        SELECT * FROM agent_workflow_stage
+        WHERE workflow_code = #{workflowCode}
+          AND stage_order &gt; #{currentOrder}
+        ORDER BY stage_order ASC
+        LIMIT 1
+    </select>
+
+    <insert id="upsertTemplate">
+        INSERT INTO agent_workflow_template (code, name, description, category_scope, enabled, created_at, updated_at)
+        VALUES (#{code}, #{name}, #{description},
+                #{categoryScope, typeHandler=com.icss.handler.JsonListTypeHandler},
+                #{enabled}, #{createdAt}, #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            description = VALUES(description),
+            category_scope = VALUES(category_scope),
+            enabled = VALUES(enabled),
+            updated_at = VALUES(updated_at)
+    </insert>
+
+    <delete id="deleteStagesByWorkflowCode">
+        DELETE FROM agent_workflow_stage
+        WHERE workflow_code = #{workflowCode}
+    </delete>
+
+    <insert id="insertStage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO agent_workflow_stage (workflow_code, code, name, stage_order, role_label,
+                                          description, allowed_actions, created_at, updated_at)
+        VALUES (#{workflowCode}, #{code}, #{name}, #{stageOrder}, #{roleLabel}, #{description},
+                #{allowedActions, typeHandler=com.icss.handler.JsonListTypeHandler},
+                #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="selectAllRouteRules" resultMap="routeRuleResultMap">
+        SELECT * FROM agent_workflow_route_rule
+        ORDER BY intent_code ASC
+    </select>
+
+    <select id="selectRouteRuleByIntentCode" resultMap="routeRuleResultMap">
+        SELECT * FROM agent_workflow_route_rule
+        WHERE intent_code = #{intentCode}
+        LIMIT 1
+    </select>
+
+    <insert id="upsertRouteRule" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO agent_workflow_route_rule (intent_code, intent_name, target_workflow_code,
+                                               entry_stage_code, priority_strategy, enabled,
+                                               created_at, updated_at)
+        VALUES (#{intentCode}, #{intentName}, #{targetWorkflowCode}, #{entryStageCode},
+                #{priorityStrategy}, #{enabled}, #{createdAt}, #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            intent_name = VALUES(intent_name),
+            target_workflow_code = VALUES(target_workflow_code),
+            entry_stage_code = VALUES(entry_stage_code),
+            priority_strategy = VALUES(priority_strategy),
+            enabled = VALUES(enabled),
+            updated_at = VALUES(updated_at)
+    </insert>
+
+    <select id="selectAllLayouts" resultMap="layoutResultMap">
+        SELECT * FROM workbench_layout_config
+        ORDER BY workflow_code ASC, stage_code ASC
+    </select>
+
+    <select id="selectEffectiveLayout" resultMap="layoutResultMap">
+        SELECT * FROM workbench_layout_config
+        WHERE workflow_code = #{workflowCode}
+          AND stage_code = #{stageCode}
+          AND enabled = 1
+        LIMIT 1
+    </select>
+
+    <insert id="upsertLayout">
+        INSERT INTO workbench_layout_config (code, name, workflow_code, stage_code, regions, enabled, created_at, updated_at)
+        VALUES (#{code}, #{name}, #{workflowCode}, #{stageCode},
+                #{regions, typeHandler=com.icss.handler.JsonObjectTypeHandler},
+                #{enabled}, #{createdAt}, #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            workflow_code = VALUES(workflow_code),
+            stage_code = VALUES(stage_code),
+            regions = VALUES(regions),
+            enabled = VALUES(enabled),
+            updated_at = VALUES(updated_at)
+    </insert>
+</mapper>

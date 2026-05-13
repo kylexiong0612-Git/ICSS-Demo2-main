@@ -3,6 +3,9 @@ package com.icss.controller;
 import com.icss.dto.ApiResponse;
 import com.icss.dto.FaultTaskRequest;
 import com.icss.dto.GrabTaskRequest;
+import com.icss.dto.HandoffRequest;
+import com.icss.dto.TaskAdvanceResponse;
+import com.icss.model.HandoffAnalysis;
 import com.icss.model.ServiceTask;
 import com.icss.service.TaskService;
 import jakarta.validation.Valid;
@@ -20,9 +23,12 @@ public class TaskController {
 
     @GetMapping
     public ApiResponse<List<ServiceTask>> list(
-            @RequestParam Integer level,
+            @RequestParam(required = false) Integer level,
+            @RequestParam(required = false) String workflowCode,
+            @RequestParam(required = false) String stageCode,
+            @RequestParam(required = false) String customerId,
             @RequestParam(required = false) String status) {
-        return ApiResponse.success(taskService.getTaskList(level, status));
+        return ApiResponse.success(taskService.getTaskList(level, workflowCode, stageCode, customerId, status));
     }
 
     @PostMapping
@@ -34,8 +40,7 @@ public class TaskController {
     public ApiResponse<ServiceTask> update(@PathVariable String id,
                                            @RequestBody ServiceTask task) {
         task.setId(id);
-        task.setUpdatedAt(System.currentTimeMillis());
-        return ApiResponse.success(taskService.createTask(task));
+        return ApiResponse.success(taskService.updateTask(task));
     }
 
     @PutMapping("/{id}/grab")
@@ -44,9 +49,14 @@ public class TaskController {
         return ApiResponse.success(taskService.grabTask(id, req));
     }
 
+    @PutMapping("/{id}/advance")
+    public ApiResponse<TaskAdvanceResponse> advance(@PathVariable String id) {
+        return ApiResponse.success(taskService.advanceTask(id));
+    }
+
     @PutMapping("/{id}/escalate")
-    public ApiResponse<ServiceTask> escalate(@PathVariable String id) {
-        return ApiResponse.success(taskService.escalateTask(id));
+    public ApiResponse<TaskAdvanceResponse> escalate(@PathVariable String id) {
+        return ApiResponse.success(taskService.advanceTask(id));
     }
 
     @PutMapping("/{id}/complete")
@@ -57,5 +67,15 @@ public class TaskController {
     @PostMapping("/fault")
     public ApiResponse<ServiceTask> createFault(@Valid @RequestBody FaultTaskRequest req) {
         return ApiResponse.success(taskService.createFaultTask(req));
+    }
+
+    @PostMapping("/handoff-analyze")
+    public ApiResponse<HandoffAnalysis> analyzeHandoff(@Valid @RequestBody HandoffRequest request) {
+        return ApiResponse.success(taskService.analyzeHandoff(request));
+    }
+
+    @PostMapping("/handoff")
+    public ApiResponse<ServiceTask> createHandoffTask(@Valid @RequestBody HandoffRequest request) {
+        return ApiResponse.success(taskService.createHandoffTask(request));
     }
 }

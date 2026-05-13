@@ -19,7 +19,18 @@ request.interceptors.request.use(
 
 // 响应拦截器
 request.interceptors.response.use(
-  res => res.data,
+  res => {
+    const payload = res.data
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'code' in payload &&
+      'data' in payload
+    ) {
+      return payload.data
+    }
+    return payload
+  },
   error => {
     console.error('[Request Error]', error.response?.status, error.message)
     return Promise.reject(error)

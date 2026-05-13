@@ -19,11 +19,11 @@
           <span class="chat-task-id">· {{ task.id }}</span>
         </div>
         <el-tag
-          :type="task.status === 'Processing' ? 'success' : 'info'"
+          :type="task.status === 'Processing' ? 'success' : task.status === 'Escalated' ? 'warning' : 'info'"
           size="small"
           effect="light"
         >
-          {{ task.status === 'Processing' ? '处理中' : '待领取' }}
+          {{ statusLabel }}
         </el-tag>
       </div>
 
@@ -107,11 +107,17 @@
               </template>
               <template v-else>
                 <el-button
-                  v-if="level === 1"
+                  v-if="canAdvance"
                   size="small"
-                  @click="handleEscalate"
+                  @click="handleAdvance"
                 >
-                  升级二线
+                  推进至 {{ nextStageLabel }}
+                </el-button>
+                <el-button
+                  size="small"
+                  @click="$emit('complete', task.id)"
+                >
+                  完成
                 </el-button>
                 <el-button
                   type="primary"
@@ -132,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import {
   ChatDotRound,
   Headset,
@@ -153,18 +159,30 @@ const chatStore = useChatStore()
 
 const props = defineProps<{
   task: ServiceTask | null
-  level: 1 | 2
+  stageLabel: string
+  nextStageLabel?: string
 }>()
 
 const emit = defineEmits<{
   'update-task': [task: ServiceTask]
-  escalate: [taskId: string]
+  advance: [taskId: string]
+  complete: [taskId: string]
   grab: [taskId: string]
 }>()
 
 const reply = ref('')
 const isFocused = ref(false)
 const chatScrollRef = ref<HTMLDivElement | null>(null)
+const statusLabel = computed(() => {
+  if (!props.task) return '待领取'
+  if (props.task.status === 'Processing') return '处理中'
+  if (props.task.status === 'Completed') return '已完成'
+  if (props.task.status === 'Escalated') return '已升级'
+  return '待领取'
+})
+const canAdvance = computed(() =>
+  Boolean(props.task && props.task.status === 'Processing' && props.nextStageLabel),
+)
 
 // 消息更新时自动滚到底部
 watch(
@@ -186,7 +204,9 @@ function senderInfo(msg: Message) {
     return { name: '宏小二', icon: null, avatarClass: 'avatar-bot', emoji: '' }
   }
   if (msg.role === 'agent') {
-    if ((msg.metadata as { level?: number })?.level === 2) {
+    const stageOrder = (msg.metadata as { level?: number; stageOrder?: number })?.stageOrder
+      ?? (msg.metadata as { level?: number })?.level
+    if (stageOrder && stageOrder >= 2) {
       return { name: '资深专家', icon: StarFilled, avatarClass: 'avatar-expert', emoji: '' }
     }
     return { name: '人工客服', icon: Service, avatarClass: 'avatar-agent', emoji: '' }
@@ -202,7 +222,7 @@ function handleSend() {
     content: reply.value.trim(),
     timestamp: Date.now(),
     type: 'text',
-    metadata: { level: props.level },
+    metadata: { stageCode: props.task.currentStageCode, stageOrder: props.task.currentStageOrder },
   }
   emit('update-task', {
     ...props.task,
@@ -215,24 +235,21 @@ function handleSend() {
   reply.value = ''
 }
 
-function handleEscalate() {
+function handleAdvance() {
   if (!props.task) return
   const systemMsg: Message = {
     id: crypto.randomUUID(),
     role: 'bot',
-    content: '正在为您转接资深专家中，请稍后',
+    content: `正在为您转接${props.nextStageLabel ?? '下一阶段专席'}，请稍后`,
     timestamp: Date.now(),
     type: 'system',
   }
   emit('update-task', {
     ...props.task,
-    level: 2,
-    status: 'Pending',
-    assignedTo: undefined,
     chatHistory: [...props.task.chatHistory, systemMsg],
     updatedAt: Date.now(),
   })
-  emit('escalate', props.task.id)
+  emit('advance', props.task.id)
 }
 </script>
 

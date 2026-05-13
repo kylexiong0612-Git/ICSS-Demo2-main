@@ -1,138 +1,198 @@
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import {
+  advanceTask,
+  completeTask,
+  createFaultTask,
+  createTask,
+  getTaskList,
+  grabTask,
+  updateTask as updateTaskApi,
+} from '@/api/task'
 import type { ServiceTask } from '@/types'
 
-const INITIAL_TASKS: ServiceTask[] = [
-  {
-    id: 'TASK-001',
-    customerId: 'CUST-882',
-    agentId: 'AG-880012',
-    requestSource: 'Agent',
-    status: 'Pending',
-    priority: 'High',
-    category: '核保咨询',
-    summary: '渠道代理人李芳请求协助：客户张伟的高额保单核保进度查询及加费项解释。',
-    aiSuggestion: '建议核实客户体检报告中的异常项，并根据精算规则提供加费说明话术。',
-    chatHistory: [],
-    level: 1,
-    createdAt: Date.now() - 3600000,
-    updatedAt: Date.now() - 3600000,
-  },
-  {
-    id: 'TASK-002',
-    customerId: 'CUST-441',
-    agentId: 'AG-880045',
-    requestSource: 'Agent',
-    status: 'Pending',
-    priority: 'Medium',
-    category: '渠道支持',
-    summary: '渠道代理人王强咨询：新产品"尊享人生"在江苏地区的销售限额及佣金政策。',
-    aiSuggestion: '提供最新的产品区域销售政策文档，并确认其所属机构的佣金系数。',
-    chatHistory: [],
-    level: 1,
-    createdAt: Date.now() - 7200000,
-    updatedAt: Date.now() - 7200000,
-  },
-]
+function normalizeTask(task: Partial<ServiceTask>): ServiceTask {
+  return {
+    id: task.id ?? '',
+    customerId: task.customerId,
+    agentId: task.agentId,
+    requestSource: task.requestSource ?? 'Customer',
+    status: task.status ?? 'Pending',
+    priority: task.priority ?? 'Medium',
+    category: task.category ?? '通用咨询',
+    summary: task.summary ?? '',
+    aiSuggestion: task.aiSuggestion ?? '',
+    chatHistory: task.chatHistory ?? [],
+    assignedTo: task.assignedTo,
+    unreadCount: task.unreadCount ?? 0,
+    level: task.level ?? task.currentStageOrder ?? 1,
+    workflowCode: task.workflowCode ?? 'ops-service-flow',
+    currentStageCode: task.currentStageCode ?? 'L1',
+    currentStageOrder: task.currentStageOrder ?? task.level ?? 1,
+    sourceTaskId: task.sourceTaskId,
+    intentCode: task.intentCode,
+    routeReason: task.routeReason,
+    handoffConfidence: task.handoffConfidence,
+    tags: task.tags ?? [],
+    createdAt: task.createdAt ?? Date.now(),
+    updatedAt: task.updatedAt ?? Date.now(),
+  }
+}
 
 export const useTaskStore = defineStore('task', () => {
-  const tasks = ref<ServiceTask[]>(INITIAL_TASKS)
+  const tasks = ref<ServiceTask[]>([])
+  const isLoading = ref(false)
 
-  // --- Getters ---
-
-  const pendingByLevel = (level: 1 | 2) =>
-    computed(() => tasks.value.filter(t => t.level === level && t.status === 'Pending'))
-
-  const processingByMe = (level: 1 | 2) =>
-    computed(() =>
-      tasks.value.filter(
-        t => t.level === level && t.status === 'Processing' && t.assignedTo === 'ME',
-      ),
-    )
-
-  // --- Actions ---
-
-  function addTask(task: ServiceTask) {
-    tasks.value.unshift(task)
-  }
-
-  function updateTask(updated: ServiceTask) {
-    const idx = tasks.value.findIndex(t => t.id === updated.id)
-    if (idx !== -1) {
-      tasks.value[idx] = { ...updated }
+  function mergeTasks(incomingTasks: Partial<ServiceTask>[]) {
+    for (const incoming of incomingTasks) {
+      upsertTask(normalizeTask(incoming))
     }
   }
 
-  function grabTask(taskId: string) {
-    const task = tasks.value.find(t => t.id === taskId)
-    if (!task) return
-    updateTask({
+  function upsertTask(task: ServiceTask) {
+    const idx = tasks.value.findIndex(item => item.id === task.id)
+    if (idx === -1) {
+      tasks.value.unshift(task)
+      return
+    }
+    tasks.value[idx] = {
+      ...tasks.value[idx],
       ...task,
-      status: 'Processing',
-      assignedTo: 'ME',
-      updatedAt: Date.now(),
-    })
+      chatHistory: task.chatHistory?.length ? task.chatHistory : tasks.value[idx].chatHistory,
+    }
   }
 
-  function escalateTask(taskId: string) {
-    const task = tasks.value.find(t => t.id === taskId)
-    if (!task) return
-    updateTask({
-      ...task,
-      status: 'Pending',
-      level: 2,
-      assignedTo: undefined,
-      updatedAt: Date.now(),
-    })
+  async function loadTasks(params: {
+    level?: number
+    workflowCode?: string
+    stageCode?: string
+    customerId?: string
+    status?: string
+  }) {
+    isLoading.value = true
+    try {
+      const data = await getTaskList(params)
+      mergeTasks(data)
+      return data.map(normalizeTask)
+    } finally {
+      isLoading.value = false
+    }
   }
 
-  function markRead(taskId: string) {
-    const task = tasks.value.find(t => t.id === taskId)
-    if (!task) return
-    updateTask({ ...task, unreadCount: 0 })
+  async function refreshStageTasks(workflowCode: string, stageCode: string) {
+    return loadTasks({ workflowCode, stageCode })
   }
 
-  function createFaultTask(payload: {
+  async function loadCustomerTasks(customerId: string) {
+    return loadTasks({ customerId })
+  }
+
+  async function addTask(task: Partial<ServiceTask>) {
+    const created = normalizeTask(await createTask(task))
+    upsertTask(created)
+    return created
+  }
+
+  async function saveTask(task: ServiceTask) {
+    const saved = normalizeTask(await updateTaskApi(task))
+    upsertTask(saved)
+    return saved
+  }
+
+  async function assignTask(taskId: string, agentId = 'ME') {
+    const saved = normalizeTask(await grabTask(taskId, agentId))
+    upsertTask(saved)
+    return saved
+  }
+
+  async function moveToNextStage(taskId: string) {
+    const response = await advanceTask(taskId)
+    if (response.currentTask) {
+      upsertTask(normalizeTask(response.currentTask))
+    }
+    if (response.nextTask) {
+      upsertTask(normalizeTask(response.nextTask))
+    }
+    return response
+  }
+
+  async function finishTask(taskId: string) {
+    const saved = normalizeTask(await completeTask(taskId))
+    upsertTask(saved)
+    return saved
+  }
+
+  function updateTask(task: ServiceTask) {
+    upsertTask(normalizeTask(task))
+  }
+
+  function getTasksByStage(workflowCode: string, stageCode: string) {
+    return computed(() =>
+      tasks.value.filter(
+        task =>
+          task.workflowCode === workflowCode &&
+          task.currentStageCode === stageCode,
+      ),
+    )
+  }
+
+  function pendingByStage(workflowCode: string, stageCode: string) {
+    return computed(() =>
+      tasks.value.filter(
+        task =>
+          task.workflowCode === workflowCode &&
+          task.currentStageCode === stageCode &&
+          task.status === 'Pending',
+      ),
+    )
+  }
+
+  function processingByMe(workflowCode: string, stageCode: string) {
+    return computed(() =>
+      tasks.value.filter(
+        task =>
+          task.workflowCode === workflowCode &&
+          task.currentStageCode === stageCode &&
+          task.status === 'Processing' &&
+          task.assignedTo === 'ME',
+      ),
+    )
+  }
+
+  async function submitFaultTask(payload: {
     relatedTaskId?: string
     faultType?: string
     description: string
     affectedScope?: string
     urgency: 'Low' | 'Medium' | 'High' | 'Urgent'
-  }): string {
-    const ts = Date.now()
-    const id = `FAULT-${String(ts).slice(-6)}`
-    const summaryParts = [
-      payload.faultType ? `[${payload.faultType}]` : '',
-      payload.description,
-      payload.affectedScope ? `（影响范围：${payload.affectedScope}）` : '',
-      payload.relatedTaskId ? `关联任务：${payload.relatedTaskId}` : '',
-    ].filter(Boolean)
-    const newTask: ServiceTask = {
-      id,
-      requestSource: 'Agent',
-      status: 'Pending',
-      priority: payload.urgency,
-      category: '生产故障',
-      summary: summaryParts.join(' '),
-      aiSuggestion: '',
-      chatHistory: [],
-      level: 2,
-      createdAt: ts,
-      updatedAt: ts,
-    }
-    tasks.value.unshift(newTask)
-    return id
+  }) {
+    const created = normalizeTask(await createFaultTask(payload))
+    upsertTask(created)
+    return created
+  }
+
+  function markRead(taskId: string) {
+    const task = tasks.value.find(item => item.id === taskId)
+    if (!task) return
+    upsertTask({ ...task, unreadCount: 0 })
   }
 
   return {
     tasks,
-    pendingByLevel,
+    isLoading,
+    getTasksByStage,
+    pendingByStage,
     processingByMe,
+    loadTasks,
+    refreshStageTasks,
+    loadCustomerTasks,
     addTask,
+    saveTask,
+    assignTask,
+    moveToNextStage,
+    finishTask,
+    submitFaultTask,
     updateTask,
-    grabTask,
-    escalateTask,
     markRead,
-    createFaultTask,
   }
 })

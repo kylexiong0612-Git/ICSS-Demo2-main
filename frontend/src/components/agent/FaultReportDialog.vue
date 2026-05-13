@@ -89,14 +89,14 @@ async function handleSubmit() {
   if (!formRef.value) return
   try {
     await formRef.value.validate()
-    const taskId = taskStore.createFaultTask({
+    const task = await taskStore.submitFaultTask({
       relatedTaskId: props.task?.id,
       faultType: form.faultType || undefined,
       description: form.description,
       affectedScope: form.affectedScope || undefined,
       urgency: form.urgency as 'Low' | 'Medium' | 'High' | 'Urgent',
     })
-    emit('submitted', taskId)
+    emit('submitted', task.id)
     emit('update:modelValue', false)
     resetForm()
   } catch {

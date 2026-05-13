@@ -1,11 +1,10 @@
 # 项目上下文 (Project Context)
 
-## 项目用途
-
+## 1. 🎯 项目概述 (Project Overview)
 **ICSS Demo 1** — 一体化渠道智能服务平台（Integrated Omnichannel Customer Service System）
+**愿景**: [构建一个面向保险公司销售渠道人员的智能服务平台]
 
-面向保险公司渠道服务中心的全渠道服务演示原型，实现以下核心场景：
-
+实现以下核心场景：
 - **客户侧**：模拟手机 App，提供 AI 智能客服（宏小二）、保单查询、服务申请
 - **坐席侧**：L1/L2 双层坐席工作台，含任务队列、实时聊天、客户 360° 视图、AI 辅助建议
 - **管理侧**：运营监控大屏，含实时指标（等待人数、在线坐席、首次解决率、机器人分流率）
@@ -13,52 +12,82 @@
 
 支持的服务类型：理赔咨询、核保咨询、保单变更、渠道支持、投诉建议。
 
----
-
-## 技术栈
-
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| 前端框架 | Vue | 3.5.13 |
-| 语言 | TypeScript | ~5.8.2 |
-| 构建工具 | Vite | 6.2.0 |
-| PC UI 组件库 | Element Plus | 2.8.0 |
-| PC 图标 | @element-plus/icons-vue | 2.3.1 |
-| 移动端 UI 组件库 | Vant | 4.8.5 |
-| 样式预处理 | Sass | 1.77.0 |
-| 状态管理 | Pinia | 2.2.0 |
-| 状态持久化 | pinia-plugin-persistedstate | 3.2.0 |
-| 路由 | Vue Router | 4.3.0 |
-| HTTP 客户端 | Axios | 1.8.4 |
-| 图表 | ECharts | 5.5.0 |
-| 图表（Vue 封装） | vue-echarts | 7.0.0 |
-| 移动端适配 | amfe-flexible | 2.2.1 |
-| px→rem 转换 | postcss-pxtorem | 6.1.0 |
-| 自动导入（API） | unplugin-auto-import | 0.18.0 |
-| 自动导入（组件） | unplugin-vue-components | 0.27.0 |
-
-**当前激活的 AI 服务**：智谱 AI（GLM-4-Flash），接口地址 `https://open.bigmodel.cn/api/paas/v4/chat/completions`，密钥通过 `ZHIPU_API_KEY` 环境变量注入（服务端注入，不暴露到前端 bundle）。
+**当前阶段**: [MVP 开发]
 
 ---
 
-## 代码规范
+## 2. 🛠️ 技术栈 (Tech Stack)
 
-### 通用规范（本项目 Vue 3 / TypeScript）
+- **前端**: Vue3 + Vite + Vant + Pinia + TypeScript
+- **后端**: SpringBoot 3.5.0 + MyBatis + mysql
+- **数据库**: mysql
+-**当前激活的 AI 服务**：智谱 AI（GLM-4-Flash），接口地址 `https://open.bigmodel.cn/api/paas/v4/chat/completions`，密钥通过 `ZHIPU_API_KEY` 环境变量注入（服务端注入，不暴露到前端 bundle）。
 
-- **命名**：组件文件使用大驼峰（`AgentWorkstationView.vue`），变量/函数使用小驼峰（`serviceTask`），常量使用全大写下划线（`MAX_RETRY_COUNT`）
-- **组件结构**：使用 `<script setup lang="ts">` Composition API，顺序为 import → defineProps/defineEmits → 响应式状态 → 计算属性 → 方法 → 生命周期
-- **TypeScript**：所有 props 和状态必须明确类型，接口定义统一在 `src/types/index.ts`
-- **样式**：使用 `<style scoped lang="scss">`，SCSS 变量统一在 `src/assets/styles/variable.scss`，避免内联样式
-- **API 调用**：统一封装在 `src/api/` 目录，HTTP 实例封装在 `src/utils/request.ts`，不在组件内直接发起 HTTP 请求
-- **状态管理**：业务状态使用 Pinia store（`src/stores/`），组件间通信优先 props/emit
-- **缩进**：2 个空格
+---
 
-### 公司通用规范（参见 dev-standards/ 目录）
+##3.代码规范
 
-- **PC 端**（Vue 项目）：Element Plus，Sass scoped 样式，接口定义在 `src/api/`，axios 封装在 `src/utils/request.ts`
+### 工程目录
+- **前端对应工程目录**:frontend
+- **后端对应工程目录**:backend
+
+### 代码规范（参见 dev-standards/ 目录）
+
+- **PC端**（Vue 项目）：Element Plus，Sass scoped 样式，接口定义在 `src/api/`，axios 封装在 `src/utils/request.ts`
 - **移动端**（Vue 项目）：Vue 3 Composition API（script setup），Vant 4，Pinia 状态管理，px-to-rem 移动端适配（根字体 37.5px，设计稿 375px）
 
 ---
+
+## 4. ⚙️ 核心工作流：Spec-Driven Development (SDD)
+**这是本项目的最高开发原则。任何代码变更必须严格遵循以下流程：**
+
+### 阶段 1: 分析 (Analyze)
+- 在开始任何任务前，**必须**先阅读 `openspec/specs/` 中相关的现有规范，理解系统当前状态。
+- 禁止在未理解上下文的情况下直接修改代码。
+
+### 阶段 2: 提案 (Propose)
+- 所有新功能或修改**必须**在 `openspec/changes/` 目录下创建一个新的子文件夹（命名格式：`feat-xxx` 或 `fix-xxx`）。
+- 提案文件夹内必须包含：
+  1. `proposal.md`: 问题陈述、目标、预期价值。
+  2. `design.md`: 技术方案、数据模型变更、API 设计、流程图。
+  3. `tasks.md`: 详细的实施步骤清单 (Checklist)。
+- **禁止**在此阶段编写任何业务代码。
+
+### 阶段 3: 审批 (Approve)
+- 生成提案后，**必须停止**并等待用户（人类）审查。
+- 只有当用户明确回复“批准”、“Approved”或“开始实施”后，才能进入下一阶段。
+
+### 阶段 4: 实施 (Implement)
+- 严格按照 `tasks.md` 的步骤执行编码。
+- 每完成一个步骤，需进行自测。
+- 严禁超出提案范围的非必要修改。
+
+### 阶段 5: 同步 (Sync)
+- 代码合并后，**必须**更新 `openspec/specs/` 中对应的规范文件，确保”规格”与”代码”永远一致。
+- **必须**同步更新 `PRD.md` 中涉及变更的相关内容，确保 PRD 与 specs 保持一致。
+- 归档或删除 `openspec/changes/` 中的临时提案文件夹（或标记为 `completed`）。
+
+## 5. 📝 文档标准 (Documentation Standards)
+- **规格书 (`specs/*.md`)**: 必须包含：业务规则、数据模型 (Schema)、API 定义 (Request/Response)、错误处理。
+- **提案书 (`changes/*/design.md`)**: 必须包含：变更对比 (Before/After)、风险评估、回滚计划。
+- **代码注释**: 仅在复杂逻辑处添加注释，代码本身应自解释。
+
+## 6. 🧠 AI 角色设定 (AI Persona)
+- 你是一名**资深系统架构师**和**严谨的技术负责人**。
+- **你的职责**:
+  - 主动识别需求中的模糊点并提出质疑。
+  - 在设计阶段优先考虑可扩展性、安全性和性能。
+  - 严格遵守 SDD 流程，绝不跳过“提案”和“审批”环节。
+  - 像对待生产事故一样对待规范与代码的不一致。
+
+## 6. 🚫 绝对禁令 (Absolute prohibitions)
+- ❌ 严禁在没有 `changes/` 提案的情况下直接修改 `src/` 代码。
+- ❌ 严禁在未经用户批准的情况下自动提交代码或创建 PR。
+- ❌ 严禁忽略 `specs/` 中的现有约束（如数据类型、权限规则）。
+
+---
+
+
 
 ## 领域知识
 
@@ -94,7 +123,6 @@ DashboardStats { waitingCount, onlineAgents, avgHandlingTime, fcr, botDeflection
 
 ### 技术约束
 
-- 项目为**演示原型**，所有客户数据为 Mock，不连接真实后端数据库
 - 初始演示数据硬编码在组件内（TASK-001、TASK-002、CUST-882）
 - 开发服务器监听 `0.0.0.0:3000`，可通过 `DISABLE_HMR=true` 关闭热更新
 - 路径别名 `@/` 指向 `src/` 目录
@@ -111,9 +139,48 @@ DashboardStats { waitingCount, onlineAgents, avgHandlingTime, fcr, botDeflection
 - 当前 AI 服务仅支持文本对话，不支持多模态输入
 - 图表（ECharts）数据目前为静态 Mock，未接入实时数据流
 
-### 开发约束
+---
 
-- 本项目技术栈为 **Vue 3 + TypeScript**，spec/ 目录中的规范同样适用于此项目
-- 新增视图组件应放在 `src/views/`，新增功能组件应放在 `src/components/`
-- 新增 API 调用应放在 `src/api/`，新增业务 store 应放在 `src/stores/`
-- 类型定义统一维护在 `src/types/index.ts`，避免在组件文件内定义业务类型
+## 项目速查
+
+### 常用命令
+
+```bash
+npm run dev        # 启动开发服务器 http://0.0.0.0:3000（hash 路由，HMR）
+npm run build      # 类型检查（vue-tsc --noEmit）+ Vite 生产构建 → dist/
+npm run preview    # 预览生产构建
+npm run lint       # 仅类型检查（vue-tsc --noEmit，未配置 ESLint）
+npm run clean      # 删除 dist/
+```
+
+### 路由表（hash 模式）
+
+| 路由 | 视图 | 用途 |
+|------|------|------|
+| `/#/customer` | CustomerView | 移动端手机框架，面向终端客户 |
+| `/#/agent/1` | AgentWorkstationView | L1 坐席三栏工作台 |
+| `/#/agent/2` | AgentWorkstationView | L2 坐席工作台（同组件，level prop 不同） |
+| `/#/admin` | AdminDashboardView | KPI 卡片 + ECharts 趋势/分类图表 |
+
+### 组件树
+
+```
+App.vue
+├── CustomerView
+│   ├── HomeScreen
+│   └── ChatInterface
+├── AgentWorkstationView
+│   ├── TaskList
+│   ├── ChatPanel
+│   └── CustomerPanel
+└── AdminDashboardView
+    ├── StatsGrid
+    ├── TrendChart
+    ├── CategoryChart
+    └── IssueList
+```
+
+### AI 调用（`frontend/src/api/ai.ts`）
+
+- `getBotResponse(message, history)` — 对话补全，使用「宏小二」系统提示词
+- `preProcessTask(history)` — JSON 模式调用，返回任务元数据 `{ summary, suggestion, tags }`

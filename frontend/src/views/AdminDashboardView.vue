@@ -12,7 +12,12 @@
           <el-option label="近7日" value="week" />
         </el-select>
         <el-button size="small" type="primary" :icon="Download">导出报表</el-button>
-        <el-button size="small" :icon="Setting">流程配置</el-button>
+        <el-button size="small" :icon="Connection" @click="router.push('/admin/agent-workflows')">
+          工作流配置
+        </el-button>
+        <el-button size="small" :icon="Setting" @click="router.push('/admin/workbench-config')">
+          工作台配置
+        </el-button>
       </div>
     </div>
 
@@ -51,12 +56,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Download, Setting } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { Connection, Download, Setting } from '@element-plus/icons-vue'
 import StatsGrid from '@/components/admin/StatsGrid.vue'
 import TrendChart from '@/components/admin/TrendChart.vue'
 import CategoryChart from '@/components/admin/CategoryChart.vue'
 import IssueList from '@/components/admin/IssueList.vue'
 
+const router = useRouter()
 const dateRange = ref('today')
 </script>
 
